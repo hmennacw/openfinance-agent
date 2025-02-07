@@ -2,80 +2,68 @@
 description: 
 globs: 
 ---
-
-# Your rule content
-
 Project Rules:
 
 1. Architecture:
-- Follow the three-layer architecture: Cognitive, Compiler, and Agent
-- Keep components modular and loosely coupled
-- Use dependency injection for component communication
-
+Follow the three-layer architecture: Cognitive, Compiler, and Agent
+Keep components modular and loosely coupled
+Use dependency injection for component communication
 2. Code Style:
-- Use type hints for all function parameters and return values
-- Use dataclasses for data structures
-- Follow async/await patterns for asynchronous operations
-- Use enums for fixed sets of values
-- Implement abstract base classes (ABC) for interfaces
-
+Use type hints for all function parameters and return values
+Use dataclasses for data structures
+Follow async/await patterns for asynchronous operations
+Use enums for fixed sets of values
+Implement abstract base classes (ABC) for interfaces
 3. Error Handling:
-- Use custom exceptions for domain-specific errors
-- Implement proper error propagation
-- Include error context in exception messages
-- Log errors with appropriate levels
-
+Use custom exceptions for domain-specific errors
+Implement proper error propagation
+Include error context in exception messages
+Log errors with appropriate levels
 4. Documentation:
-- Include docstrings for all classes and methods
-- Use type hints and dataclass decorators
-- Document exceptions that may be raised
-- Include usage examples in complex components
-
+Include docstrings for all classes and methods
+Use type hints and dataclass decorators
+Document exceptions that may be raised
+Include usage examples in complex components
+Update the README file when necessary
 5. Testing:
-- Organize tests by component (unit/integration/e2e)
-- Mock external dependencies (OpenAI, file system)
-- Test error cases and edge conditions
-- Include memory and performance tests
-
+Organize tests by component (unit/integration/e2e)
+Mock external dependencies (OpenAI, file system)
+Test error cases and edge conditions
+Include memory and performance tests
+Update unit tests when changes impact functionality
 6. Components:
 Cognitive:
-- Memory components must implement persistence
-- Task planners must handle dependencies
-- Decision makers must use weighted criteria
-- Learning systems must support serialization
-
+Memory components must implement persistence
+Task planners must handle dependencies
+Decision makers must use weighted criteria
+Learning systems must support serialization
 Compiler:
-- Pipeline stages must be independent
-- AST transformations must be reversible
-- Code generation must follow Go best practices
-- Validators must check syntax and semantics
-
+Pipeline stages must be independent
+AST transformations must be reversible
+Code generation must follow Go best practices
+Validators must check syntax and semantics
 Agent:
-- LLM providers must implement base interface
-- Prompts must use templating system
-- Context must be thread-safe
-- Generators must handle partial results
-
+LLM providers must implement base interface
+Prompts must use templating system
+Context must be thread-safe
+Generators must handle partial results
 7. File Organization:
-- Keep related components in same directory
-- Use __init__.py for public interfaces
-- Separate interfaces from implementations
-- Group utilities in utils package
-
+Keep related components in same directory
+Use __init__.py for public interfaces
+Separate interfaces from implementations
+Group utilities in utils package
 8. Dependencies:
-- Use requirements.txt for production deps
-- Use requirements-dev.txt for development deps
-- Pin dependency versions
-- Document third-party integrations
-
+Use requirements.txt for production deps
+Use requirements-dev.txt for development deps
+Pin dependency versions
+Document third-party integrations
 9. Configuration:
-- Use environment variables for secrets
-- Use YAML for configuration files
-- Support multiple environments
-- Validate configuration at startup
-
+Use environment variables for secrets
+Use YAML for configuration files
+Support multiple environments
+Validate configuration at startup
 10. Logging:
-- Use structured logging
-- Include context in log messages
-- Support different log levels
-- Configure logging per component
+Use structured logging
+Include context in log messages
+Support different log levels
+Configure logging per component

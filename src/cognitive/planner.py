@@ -13,7 +13,7 @@ class TaskStatus(Enum):
     FAILED = "failed"
     BLOCKED = "blocked"
 
-@dataclass
+@dataclass(frozen=True)
 class Task:
     """Represents a single task in the system."""
     id: str
@@ -30,20 +30,44 @@ class Task:
     parent_id: Optional[str] = None
     priority: int = 0
     
+    def __hash__(self) -> int:
+        return hash(self.id)
+    
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Task):
+            return NotImplemented
+        return self.id == other.id
+    
     def add_subtask(self, subtask: 'Task') -> None:
         """Add a subtask to this task."""
-        subtask.parent_id = self.id
-        self.subtasks.append(subtask)
+        # Create a new task with the updated parent_id
+        new_subtask = Task(
+            id=subtask.id,
+            name=subtask.name,
+            description=subtask.description,
+            dependencies=subtask.dependencies,
+            status=subtask.status,
+            created_at=subtask.created_at,
+            started_at=subtask.started_at,
+            completed_at=subtask.completed_at,
+            error=subtask.error,
+            metadata=subtask.metadata,
+            subtasks=subtask.subtasks,
+            parent_id=self.id,
+            priority=subtask.priority
+        )
+        # Since the object is frozen, we need to use object.__setattr__ to modify the list
+        object.__setattr__(self, 'subtasks', self.subtasks + [new_subtask])
     
     def update_status(self, status: TaskStatus, error: Optional[str] = None) -> None:
         """Update the task's status."""
-        self.status = status
+        object.__setattr__(self, 'status', status)
         if status == TaskStatus.IN_PROGRESS and not self.started_at:
-            self.started_at = datetime.now()
+            object.__setattr__(self, 'started_at', datetime.now())
         elif status in [TaskStatus.COMPLETED, TaskStatus.FAILED]:
-            self.completed_at = datetime.now()
+            object.__setattr__(self, 'completed_at', datetime.now())
         if error:
-            self.error = error
+            object.__setattr__(self, 'error', error)
 
 @dataclass
 class TaskExecutionContext:
@@ -213,49 +237,37 @@ class TaskPlanner:
         
     def get_execution_plan(self) -> List[List[Task]]:
         """Get the planned execution order of tasks."""
-        # Implementation of topological sort for tasks
-        visited = set()
-        temp = set()
-        order = []
+        # First, create a mapping of tasks to their direct dependencies
+        task_deps = {
+            task: [self.get_task(dep_id) for dep_id in task.dependencies if self.get_task(dep_id)]
+            for task in self.tasks.values()
+        }
         
-        def visit(task: Task):
-            if task.id in temp:
-                raise ValueError("Circular dependency detected")
-            if task.id in visited:
-                return
+        # Create a mapping of tasks to their levels
+        task_levels: Dict[Task, int] = {}
+        
+        def calculate_level(task: Task) -> int:
+            """Calculate the level of a task based on its dependencies."""
+            if task in task_levels:
+                return task_levels[task]
             
-            temp.add(task.id)
-            
-            for dep_id in task.dependencies:
-                dep_task = self.get_task(dep_id)
-                if dep_task:
-                    visit(dep_task)
-            
-            temp.remove(task.id)
-            visited.add(task.id)
-            order.append(task)
-        
-        # Sort tasks by visiting all nodes
-        for task in self.tasks.values():
-            if task.id not in visited:
-                visit(task)
-        
-        # Group tasks that can be executed in parallel
-        execution_plan = []
-        current_level = []
-        
-        for task in reversed(order):
-            if not task.dependencies or all(
-                self.get_task(dep_id) in [t for level in execution_plan for t in level]
-                for dep_id in task.dependencies
-            ):
-                current_level.append(task)
+            if not task_deps[task]:
+                level = 0
             else:
-                if current_level:
-                    execution_plan.append(current_level)
-                current_level = [task]
+                level = 1 + max(calculate_level(dep) for dep in task_deps[task])
+            
+            task_levels[task] = level
+            return level
         
-        if current_level:
-            execution_plan.append(current_level)
+        # Calculate levels for all tasks
+        for task in self.tasks.values():
+            calculate_level(task)
+        
+        # Group tasks by level
+        max_level = max(task_levels.values()) if task_levels else 0
+        execution_plan = [[] for _ in range(max_level + 1)]
+        
+        for task, level in task_levels.items():
+            execution_plan[level].append(task)
         
         return execution_plan 

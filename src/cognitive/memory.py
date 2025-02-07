@@ -1,81 +1,110 @@
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Union
 from dataclasses import dataclass, field
 from datetime import datetime
 import json
+import os
 
 @dataclass
 class Memory:
     """Base class for memory items."""
     content: Any
+    memory_type: str = "generic"
     created_at: datetime = field(default_factory=datetime.now)
-    memory_type: str = field(default="generic")
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 @dataclass
-class CodeMemory(Memory):
+class CodeMemory:
     """Memory specific to code generation."""
+    content: Any
     file_path: str
     code_type: str  # e.g., "handler", "usecase", "model"
     dependencies: List[str] = field(default_factory=list)
+    _base: Memory = field(init=False)
     
     def __post_init__(self):
-        self.memory_type = "code"
+        self._base = Memory(
+            content=self.content,
+            memory_type="code",
+            created_at=datetime.now(),
+            metadata={}
+        )
+    
+    @property
+    def memory_type(self) -> str:
+        return self._base.memory_type
+    
+    @property
+    def created_at(self) -> datetime:
+        return self._base.created_at
+    
+    @property
+    def metadata(self) -> Dict[str, Any]:
+        return self._base.metadata
 
 @dataclass
-class ContextMemory(Memory):
+class ContextMemory:
     """Memory for maintaining context across operations."""
+    content: Any
     context_type: str  # e.g., "project", "file", "function"
     scope: str
+    _base: Memory = field(init=False)
     
     def __post_init__(self):
-        self.memory_type = "context"
+        self._base = Memory(
+            content=self.content,
+            memory_type="context",
+            created_at=datetime.now(),
+            metadata={}
+        )
+    
+    @property
+    def memory_type(self) -> str:
+        return self._base.memory_type
+    
+    @property
+    def created_at(self) -> datetime:
+        return self._base.created_at
+    
+    @property
+    def metadata(self) -> Dict[str, Any]:
+        return self._base.metadata
 
 class MemoryManager:
     """Manages different types of memory for the agent."""
     
     def __init__(self):
-        self.memories: Dict[str, List[Memory]] = {
-            "code": [],
-            "context": [],
-            "generic": []
-        }
-        self.working_memory: Dict[str, Any] = {}
+        """Initialize the memory manager."""
+        self.memories: Dict[str, List[Memory | CodeMemory | ContextMemory]] = {}
     
-    def add_memory(self, memory: Memory) -> None:
-        """Add a new memory item."""
+    def add_memory(self, memory: Memory | CodeMemory | ContextMemory) -> None:
+        """Add a memory item."""
+        if memory.memory_type not in self.memories:
+            self.memories[memory.memory_type] = []
         self.memories[memory.memory_type].append(memory)
     
-    def get_memories_by_type(self, memory_type: str) -> List[Memory]:
-        """Retrieve all memories of a specific type."""
+    def get_memories_by_type(self, memory_type: str) -> List[Memory | CodeMemory | ContextMemory]:
+        """Get all memories of a specific type."""
         return self.memories.get(memory_type, [])
     
-    def get_recent_memories(
-        self,
-        memory_type: Optional[str] = None,
-        limit: int = 10
-    ) -> List[Memory]:
+    def get_recent_memories(self, limit: int = 10, memory_type: Optional[str] = None) -> List[Memory | CodeMemory | ContextMemory]:
         """Get the most recent memories, optionally filtered by type."""
-        memories = []
-        if memory_type:
-            memories = self.memories.get(memory_type, [])
-        else:
-            for mem_list in self.memories.values():
-                memories.extend(mem_list)
+        all_memories = []
+        for mtype, memories in self.memories.items():
+            if memory_type is None or mtype == memory_type:
+                all_memories.extend(memories)
         
-        return sorted(
-            memories,
-            key=lambda x: x.created_at,
-            reverse=True
-        )[:limit]
+        # Sort by created_at in reverse order (most recent first)
+        all_memories.sort(key=lambda x: x.created_at, reverse=True)
+        return all_memories[:limit]
     
     def add_code_memory(
         self,
         file_path: str,
         code_type: str,
-        content: str,
+        content: Any,
         dependencies: Optional[List[str]] = None
     ) -> None:
-        """Add a new code memory."""
+        """Add a code memory."""
         memory = CodeMemory(
             content=content,
             file_path=file_path,
@@ -90,7 +119,7 @@ class MemoryManager:
         scope: str,
         content: Any
     ) -> None:
-        """Add a new context memory."""
+        """Add a context memory."""
         memory = ContextMemory(
             content=content,
             context_type=context_type,
@@ -99,77 +128,87 @@ class MemoryManager:
         self.add_memory(memory)
     
     def update_working_memory(self, key: str, value: Any) -> None:
-        """Update the working memory with new information."""
-        self.working_memory[key] = value
+        """Update working memory with a key-value pair."""
+        memory = Memory(
+            content={key: value},
+            memory_type="working"
+        )
+        self.add_memory(memory)
     
-    def get_working_memory(self, key: str) -> Optional[Any]:
-        """Retrieve a value from working memory."""
-        return self.working_memory.get(key)
+    def get_working_memory(self, key: Optional[str] = None) -> Union[Dict[str, Any], Any, None]:
+        """Get the current working memory state or a specific value.
+        
+        Args:
+            key: Optional key to retrieve specific value. If None, returns entire state.
+            
+        Returns:
+            If key is None, returns entire working memory state dict.
+            If key is provided, returns the value for that key or None if not found.
+        """
+        working_memories = self.get_memories_by_type("working")
+        state = {}
+        for memory in working_memories:
+            if isinstance(memory.content, dict):
+                state.update(memory.content)
+        
+        if key is not None:
+            return state.get(key)
+        return state
     
     def clear_working_memory(self) -> None:
-        """Clear the working memory."""
-        self.working_memory.clear()
+        """Clear all working memory."""
+        self.memories["working"] = []
     
     def get_related_memories(
         self,
         query: str,
         memory_type: Optional[str] = None,
         limit: int = 5
-    ) -> List[Memory]:
-        """
-        Get memories related to a query.
-        This is a simple implementation that could be enhanced with
-        embedding-based similarity search.
-        """
-        memories = self.get_memories_by_type(memory_type) if memory_type else [
-            m for mlist in self.memories.values() for m in mlist
-        ]
+    ) -> List[Memory | CodeMemory | ContextMemory]:
+        """Get memories related to a query using basic text matching."""
+        all_memories = []
+        query_terms = set(query.lower().split())
         
-        # Simple keyword matching for now
-        # Could be enhanced with embeddings and similarity search
-        query_terms = query.lower().split()
-        scored_memories = []
+        for mtype, memories in self.memories.items():
+            if memory_type is None or mtype == memory_type:
+                for memory in memories:
+                    # Convert content to string and check if all query terms are present
+                    content_str = str(memory.content).lower()
+                    if all(term in content_str for term in query_terms):
+                        all_memories.append(memory)
         
-        for memory in memories:
-            score = 0
-            memory_content = str(memory.content).lower()
-            
-            for term in query_terms:
-                if term in memory_content:
-                    score += 1
-            
-            if score > 0:
-                scored_memories.append((score, memory))
-        
-        return [
-            m for _, m in sorted(
-                scored_memories,
-                key=lambda x: (x[0], x[1].created_at),
-                reverse=True
-            )
-        ][:limit]
+        # Sort by relevance (number of query terms matched) and recency
+        all_memories.sort(
+            key=lambda x: (
+                sum(term in str(x.content).lower() for term in query_terms),
+                x.created_at
+            ),
+            reverse=True
+        )
+        return all_memories[:limit]
     
     def save_to_file(self, file_path: str) -> None:
         """Save memories to a file."""
         serialized_memories = {
             mtype: [
                 {
-                    "content": str(m.content),
-                    "created_at": m.created_at.isoformat(),
-                    "memory_type": m.memory_type,
-                    "metadata": m.metadata,
-                    **{
-                        k: v for k, v in m.__dict__.items()
-                        if k not in ["content", "created_at", "memory_type", "metadata"]
-                    }
+                    "content": memory.content if isinstance(memory.content, (str, int, float, bool)) else json.dumps(memory.content),
+                    "created_at": memory.created_at.isoformat(),
+                    "memory_type": memory.memory_type,
+                    "metadata": memory.metadata,
+                    **({"file_path": memory.file_path, "code_type": memory.code_type, "dependencies": memory.dependencies} if isinstance(memory, CodeMemory) else {}),
+                    **({"context_type": memory.context_type, "scope": memory.scope} if isinstance(memory, ContextMemory) else {})
                 }
-                for m in mlist
+                for memory in mlist
             ]
             for mtype, mlist in self.memories.items()
         }
         
+        # Create directory if it doesn't exist
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        
         with open(file_path, "w") as f:
-            json.dump(serialized_memories, f, indent=2)
+            json.dump(serialized_memories, f)
     
     def load_from_file(self, file_path: str) -> None:
         """Load memories from a file."""
@@ -177,34 +216,39 @@ class MemoryManager:
             data = json.load(f)
         
         self.memories.clear()
-        for mtype, mlist in data.items():
-            self.memories[mtype] = []
-            for mdata in mlist:
-                created_at = datetime.fromisoformat(mdata.pop("created_at"))
-                memory_type = mdata.pop("memory_type")
-                content = mdata.pop("content")
-                metadata = mdata.pop("metadata")
+        for mtype, memories in data.items():
+            for mem_data in memories:
+                # Try to parse content as JSON if it looks like a dict/list
+                content = mem_data["content"]
+                if isinstance(content, str):
+                    if content.startswith(("{", "[")):
+                        try:
+                            content = json.loads(content)
+                        except json.JSONDecodeError:
+                            pass  # Keep as string if not valid JSON
                 
-                if memory_type == "code":
+                created_at = datetime.fromisoformat(mem_data["created_at"])
+                metadata = mem_data.get("metadata", {})
+                
+                if mtype == "code":
                     memory = CodeMemory(
                         content=content,
-                        created_at=created_at,
-                        metadata=metadata,
-                        **mdata
+                        file_path=mem_data["file_path"],
+                        code_type=mem_data["code_type"],
+                        dependencies=mem_data.get("dependencies", [])
                     )
-                elif memory_type == "context":
+                elif mtype == "context":
                     memory = ContextMemory(
                         content=content,
-                        created_at=created_at,
-                        metadata=metadata,
-                        **mdata
+                        context_type=mem_data["context_type"],
+                        scope=mem_data["scope"]
                     )
                 else:
                     memory = Memory(
                         content=content,
+                        memory_type=mtype,
                         created_at=created_at,
-                        memory_type=memory_type,
                         metadata=metadata
                     )
                 
-                self.memories[memory_type].append(memory) 
+                self.add_memory(memory) 

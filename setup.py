@@ -1,0 +1,23 @@
+from setuptools import setup, find_packages
+
+setup(
+    name="openfinance-agent",
+    version="0.1.0",
+    packages=find_packages(),
+    install_requires=[
+        "langchain>=0.1.0",
+        "openai>=1.0.0",
+        "pydantic>=2.5.0",
+        "python-dotenv>=1.0.0",
+        "pytest>=7.4.0",
+        "black>=23.7.0",
+        "isort>=5.12.0",
+        "mypy>=1.5.0",
+        "pyyaml>=6.0.1",
+        "jsonschema>=4.0.0",
+        "ruff>=0.1.9",
+        "typing-extensions>=4.8.0",
+        "python-jose>=3.3.0"
+    ],
+    python_requires=">=3.8",
+) 
