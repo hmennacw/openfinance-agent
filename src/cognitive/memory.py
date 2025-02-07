@@ -74,19 +74,19 @@ class MemoryManager:
     
     def __init__(self):
         """Initialize the memory manager."""
-        self.memories: Dict[str, List[Memory | CodeMemory | ContextMemory]] = {}
+        self.memories: Dict[str, List[Union[Memory, CodeMemory, ContextMemory]]] = {}
     
-    def add_memory(self, memory: Memory | CodeMemory | ContextMemory) -> None:
+    def add_memory(self, memory: Union[Memory, CodeMemory, ContextMemory]) -> None:
         """Add a memory item."""
         if memory.memory_type not in self.memories:
             self.memories[memory.memory_type] = []
         self.memories[memory.memory_type].append(memory)
     
-    def get_memories_by_type(self, memory_type: str) -> List[Memory | CodeMemory | ContextMemory]:
+    def get_memories_by_type(self, memory_type: str) -> List[Union[Memory, CodeMemory, ContextMemory]]:
         """Get all memories of a specific type."""
         return self.memories.get(memory_type, [])
     
-    def get_recent_memories(self, limit: int = 10, memory_type: Optional[str] = None) -> List[Memory | CodeMemory | ContextMemory]:
+    def get_recent_memories(self, limit: int = 10, memory_type: Optional[str] = None) -> List[Union[Memory, CodeMemory, ContextMemory]]:
         """Get the most recent memories, optionally filtered by type."""
         all_memories = []
         for mtype, memories in self.memories.items():
@@ -164,7 +164,7 @@ class MemoryManager:
         query: str,
         memory_type: Optional[str] = None,
         limit: int = 5
-    ) -> List[Memory | CodeMemory | ContextMemory]:
+    ) -> List[Union[Memory, CodeMemory, ContextMemory]]:
         """Get memories related to a query using basic text matching."""
         all_memories = []
         query_terms = set(query.lower().split())

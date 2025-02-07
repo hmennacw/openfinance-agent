@@ -7,6 +7,10 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 addopts = "-v --cov=src --cov-report=term-missing"
 pythonpath = ["."]
+asyncio_mode = "strict"
+markers = [
+    "asyncio: mark test as async/await test",
+]
 
 [tool.coverage.run]
 source = ["src"]
