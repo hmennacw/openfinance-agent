@@ -1,10 +1,8 @@
 # OpenFinance Agent
 
 [![Tests](https://github.com/hmennacw/openfinance-agent/actions/workflows/test.yml/badge.svg)](https://github.com/hmennacw/openfinance-agent/actions/workflows/test.yml)
-[![Coverage](coverage.svg)](https://hmennacw.github.io/openfinance-agent/coverage/)
+[![Coverage](./coverage.svg)](./)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
-
-[View Full Coverage Report](https://hmennacw.github.io/openfinance-agent/coverage/)
 
 An intelligent agent for generating Go API code from Swagger/OpenAPI specifications. This project uses LLM Compiler and Cognitive Architecture concepts to create a modular and maintainable code generation system.
 
@@ -223,7 +221,6 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 ## Support
 
-- [Documentation](https://hmennacw.github.io/openfinance-agent/)
 - [Issue Tracker](https://github.com/hmennacw/openfinance-agent/issues)
 - [Discussions](https://github.com/hmennacw/openfinance-agent/discussions)
 - Email: henrique.menna@gmail.com
