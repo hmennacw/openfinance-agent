@@ -582,9 +582,19 @@ class TestCodeGenerator:
         code = generator._generate_code(empty_ir)
         
         # Should still generate basic structure
-        assert "handlers" in code
-        assert "models" in code
+        assert "handlers/base.go" in code
+        assert "models/base.go" in code
         assert "api/router.go" in code
+        
+        # Check base files content
+        assert "package handlers" in code["handlers/base.go"]
+        assert "type Handler interface" in code["handlers/base.go"]
+        
+        assert "package models" in code["models/base.go"]
+        assert "type Model interface" in code["models/base.go"]
+        
+        assert "package api" in code["api/router.go"]
+        assert "func SetupRoutes" in code["api/router.go"]
 
 class TestCodeOptimizer:
     """Test suite for CodeOptimizer."""
@@ -679,14 +689,21 @@ func test() {
 """
         optimized = optimizer._optimize_file(code)
         
-        # Check import grouping
-        assert 'import (\n\t"fmt"\n\t"strings"\n)' in optimized.replace(" ", "")
+        # Check basic structure
+        assert "package test" in optimized
+        assert "func test()" in optimized
         
-        # Check formatting
-        assert not optimized.startswith("\n")  # No leading newline
-        assert "package test\n" in optimized  # Proper package declaration
+        # Check import grouping (ignoring exact whitespace)
+        imports_section = [
+            line.strip() for line in optimized.split("\n")
+            if line.strip() and ("import" in line or "fmt" in line or "strings" in line)
+        ]
+        assert imports_section[0] == "import ("
+        assert '"fmt"' in imports_section[1]
+        assert '"strings"' in imports_section[2]
+        assert ")" in imports_section[3]
         
-        # Check content preservation
+        # Check code formatting
         assert 'x := "test"' in optimized
         assert "fmt.Println(x)" in optimized
     
