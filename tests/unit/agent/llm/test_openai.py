@@ -284,49 +284,236 @@ class TestOpenAIProvider:
             assert messages[1]["content"] == "Hi there"
     
     @pytest.mark.asyncio
-    async def test_initialize_with_env_var_no_api_key(self, provider):
+    async def test_initialize_with_env_var_no_api_key(self):
         """Test initialization with environment variable but no API key."""
-        # Remove API key from provider
-        provider.api_key = None
+        # First create with a temporary key
+        provider = OpenAIProvider(api_key="temp_key")
         
-        # Mock environment variable
+        # Then remove the key and try to initialize without environment variable
+        provider.api_key = None
+        with patch.dict(os.environ, {}, clear=True):
+            with pytest.raises(ValueError) as exc_info:
+                await provider.initialize()
+            assert str(exc_info.value) == "No API key provided"
+        
+        # Now set the environment variable and try again
         with patch.dict(os.environ, {"OPENAI_API_KEY": "test_key"}):
             await provider.initialize()
             assert provider.api_key == "test_key"
             assert provider.client is not None
-            
+    
     @pytest.mark.asyncio
     async def test_run_thread_cancelled_status(self, provider, mock_openai_client):
         """Test run thread with cancelled status."""
-        # Configure provider with mock client
-        provider.client = mock_openai_client
+        # Ensure client is not initialized
+        provider.client = None
         
-        # Configure mock response
-        mock_run = AsyncMock(
-            id="run_id",
-            status="cancelled",
-            last_error=None
-        )
+        # Mock the initialize method
+        async def mock_initialize():
+            provider.client = mock_openai_client
+        provider.initialize = mock_initialize
+        
+        # Configure mock response for cancelled status
+        mock_run = AsyncMock(id="run_id", status="cancelled")
+        mock_openai_client.beta.threads.runs.create = AsyncMock(return_value=AsyncMock(id="run_id"))
         mock_openai_client.beta.threads.runs.retrieve = AsyncMock(return_value=mock_run)
         
         with pytest.raises(Exception) as exc_info:
-            await provider.run_thread("thread_id", "run_id")
+            await provider.run_thread("thread_id", "assistant_id")
         assert str(exc_info.value) == "Run failed with status: cancelled"
         
+        # Verify the retrieve call was made
+        mock_openai_client.beta.threads.runs.retrieve.assert_called_with(
+            thread_id="thread_id",
+            run_id="run_id"
+        )
+    
     @pytest.mark.asyncio
     async def test_run_thread_expired_status(self, provider, mock_openai_client):
         """Test run thread with expired status."""
-        # Configure provider with mock client
-        provider.client = mock_openai_client
+        # Ensure client is not initialized
+        provider.client = None
+        
+        # Mock the initialize method
+        with patch.object(provider, 'initialize') as mock_initialize:
+            mock_initialize.side_effect = lambda: setattr(provider, 'client', mock_openai_client)
+            
+            # Configure mock response for expired status
+            mock_run = AsyncMock(id="run_id", status="expired")
+            mock_openai_client.beta.threads.runs.create = AsyncMock(return_value=AsyncMock(id="run_id"))
+            mock_openai_client.beta.threads.runs.retrieve = AsyncMock(return_value=mock_run)
+            
+            with pytest.raises(Exception) as exc_info:
+                await provider.run_thread("thread_id", "assistant_id")
+            assert str(exc_info.value) == "Run failed with status: expired"
+            
+            # Verify initialize was called
+            mock_initialize.assert_called_once()
+            
+            # Verify the retrieve call was made
+            mock_openai_client.beta.threads.runs.retrieve.assert_called_with(
+                thread_id="thread_id",
+                run_id="run_id"
+            )
+    
+    @pytest.mark.asyncio
+    async def test_run_thread_auto_init(self, provider, mock_openai_client):
+        """Test run thread with auto initialization."""
+        # Ensure client is not initialized
+        provider.client = None
         
         # Configure mock response
-        mock_run = AsyncMock(
-            id="run_id",
-            status="expired",
-            last_error=None
-        )
+        mock_run = AsyncMock(id="run_id", status="completed")
+        mock_openai_client.beta.threads.runs.create = AsyncMock(return_value=AsyncMock(id="run_id"))
         mock_openai_client.beta.threads.runs.retrieve = AsyncMock(return_value=mock_run)
+        mock_messages = AsyncMock(data=[
+            AsyncMock(
+                content=[AsyncMock(text=AsyncMock(value="mock response"))]
+            )
+        ])
+        mock_openai_client.beta.threads.messages.list = AsyncMock(return_value=mock_messages)
         
-        with pytest.raises(Exception) as exc_info:
-            await provider.run_thread("thread_id", "run_id")
-        assert str(exc_info.value) == "Run failed with status: expired" 
+        # Mock the initialize method
+        with patch.object(provider, 'initialize', new_callable=AsyncMock) as mock_initialize:
+            mock_initialize.side_effect = lambda: setattr(provider, 'client', mock_openai_client)
+            
+            # Call run_thread
+            response = await provider.run_thread("thread_id", "assistant_id")
+            assert response == "mock response"
+            
+            # Verify initialize was called
+            mock_initialize.assert_called_once()
+            
+            # Verify the calls were made in the correct order
+            mock_openai_client.beta.threads.runs.create.assert_called_once()
+            mock_openai_client.beta.threads.runs.retrieve.assert_called_once()
+            mock_openai_client.beta.threads.messages.list.assert_called_once()
+    
+    @pytest.mark.asyncio
+    async def test_run_thread_with_status_transitions(self, provider, mock_openai_client):
+        """Test run thread with different status transitions."""
+        # Ensure client is not initialized
+        provider.client = None
+        
+        # Mock the initialize method
+        with patch.object(provider, 'initialize', new_callable=AsyncMock) as mock_initialize:
+            mock_initialize.side_effect = lambda: setattr(provider, 'client', mock_openai_client)
+            
+            # Configure mock responses for status transitions
+            in_progress_run = AsyncMock(id="run_id", status="in_progress")
+            completed_run = AsyncMock(id="run_id", status="completed")
+            
+            mock_openai_client.beta.threads.runs.create = AsyncMock(return_value=AsyncMock(id="run_id"))
+            mock_openai_client.beta.threads.runs.retrieve.side_effect = [
+                in_progress_run,  # First call returns in_progress
+                completed_run     # Second call returns completed
+            ]
+            
+            mock_messages = AsyncMock(data=[
+                AsyncMock(
+                    content=[AsyncMock(text=AsyncMock(value="mock response"))]
+                )
+            ])
+            mock_openai_client.beta.threads.messages.list = AsyncMock(return_value=mock_messages)
+            
+            # Run the thread
+            response = await provider.run_thread("thread_id", "assistant_id")
+            
+            # Verify initialize was called
+            mock_initialize.assert_called_once()
+            
+            # Verify the calls were made in the correct order
+            mock_openai_client.beta.threads.runs.create.assert_called_once_with(
+                thread_id="thread_id",
+                assistant_id="assistant_id",
+                instructions=None
+            )
+            
+            # Verify retrieve was called twice with different statuses
+            assert mock_openai_client.beta.threads.runs.retrieve.call_count == 2
+            mock_openai_client.beta.threads.runs.retrieve.assert_called_with(
+                thread_id="thread_id",
+                run_id="run_id"
+            )
+            
+            # Verify the final response
+            assert response == "mock response"
+    
+    @pytest.mark.asyncio
+    async def test_run_thread_queued_status(self, provider, mock_openai_client):
+        """Test run thread with queued status transition."""
+        # Ensure client is not initialized
+        provider.client = None
+        
+        # Mock the initialize method
+        with patch.object(provider, 'initialize', new_callable=AsyncMock) as mock_initialize:
+            mock_initialize.side_effect = lambda: setattr(provider, 'client', mock_openai_client)
+            
+            # Configure mock responses for status transitions
+            queued_run = AsyncMock(id="run_id", status="queued")
+            in_progress_run = AsyncMock(id="run_id", status="in_progress")
+            completed_run = AsyncMock(id="run_id", status="completed")
+            
+            mock_openai_client.beta.threads.runs.create = AsyncMock(return_value=AsyncMock(id="run_id"))
+            mock_openai_client.beta.threads.runs.retrieve.side_effect = [
+                queued_run,      # First call returns queued
+                in_progress_run, # Second call returns in_progress
+                completed_run    # Third call returns completed
+            ]
+            
+            mock_messages = AsyncMock(data=[
+                AsyncMock(
+                    content=[AsyncMock(text=AsyncMock(value="mock response"))]
+                )
+            ])
+            mock_openai_client.beta.threads.messages.list = AsyncMock(return_value=mock_messages)
+            
+            # Run the thread
+            response = await provider.run_thread("thread_id", "assistant_id")
+            
+            # Verify initialize was called
+            mock_initialize.assert_called_once()
+            
+            # Verify the calls were made in the correct order
+            mock_openai_client.beta.threads.runs.create.assert_called_once()
+            
+            # Verify retrieve was called three times with different statuses
+            assert mock_openai_client.beta.threads.runs.retrieve.call_count == 3
+            
+            # Verify the final response
+            assert response == "mock response"
+    
+    @pytest.mark.asyncio
+    async def test_thread_operations_auto_init(self, provider, mock_openai_client):
+        """Test thread operations with auto initialization."""
+        # Ensure client is not initialized
+        provider.client = None
+        
+        # Mock the initialize method
+        with patch.object(provider, 'initialize', new_callable=AsyncMock) as mock_initialize:
+            mock_initialize.side_effect = lambda: setattr(provider, 'client', mock_openai_client)
+            
+            # Test create_thread
+            mock_thread = AsyncMock(id="thread_id")
+            mock_openai_client.beta.threads.create = AsyncMock(return_value=mock_thread)
+            
+            thread_id = await provider.create_thread()
+            assert thread_id == "thread_id"
+            mock_initialize.assert_called_once()
+            mock_openai_client.beta.threads.create.assert_called_once()
+            
+            # Reset initialize mock for next test
+            mock_initialize.reset_mock()
+            provider.client = None
+            
+            # Test add_message_to_thread
+            mock_message = AsyncMock(id="message_id")
+            mock_openai_client.beta.threads.messages.create = AsyncMock(return_value=mock_message)
+            
+            await provider.add_message_to_thread("thread_id", "test message", "user")
+            mock_initialize.assert_called_once()
+            mock_openai_client.beta.threads.messages.create.assert_called_once_with(
+                thread_id="thread_id",
+                role="user",
+                content="test message"
+            ) 
