@@ -2,6 +2,7 @@ import pytest
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch, call
 from typing import Dict, Any
+import os
 
 from src.cognitive.memory import MemoryManager
 from src.cognitive.planner import TaskPlanner, Task, TaskStatus, TaskExecutionContext
@@ -134,8 +135,16 @@ async def test_setup_cognitive_system():
 @pytest.mark.asyncio
 async def test_setup_llm_provider():
     """Test LLM provider setup."""
-    provider = await setup_llm_provider()
-    assert isinstance(provider, OpenAIProvider)
+    with patch.dict(os.environ, {"OPENAI_API_KEY": "test_key"}):
+        with patch("src.main.OpenAIProvider") as mock_provider_class:
+            mock_provider = AsyncMock()
+            mock_provider_class.return_value = mock_provider
+            
+            provider = await setup_llm_provider()
+            
+            mock_provider_class.assert_called_once()
+            mock_provider.initialize.assert_called_once()
+            assert provider == mock_provider
 
 @pytest.mark.asyncio
 async def test_process_swagger_spec(
