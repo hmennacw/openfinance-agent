@@ -6,6 +6,12 @@
 
 An intelligent agent for generating Go API code from Swagger/OpenAPI specifications. This project uses LLM Compiler and Cognitive Architecture concepts to create a modular and maintainable code generation system.
 
+## Requirements
+
+- Python 3.9 or higher
+- OpenAI API key
+- Go 1.21 or higher (for generated code)
+
 ## Quick Start
 
 ```bash
@@ -197,7 +203,35 @@ pip install -r requirements-dev.txt
 
 2. Run tests:
 ```bash
-pytest
+# Run tests with coverage report
+pytest --cov=src --cov-report=html --cov-report=term-missing
+
+# Run specific test file
+pytest tests/path/to/test_file.py
+
+# Run tests with specific marker
+pytest -m "marker_name"
+```
+
+3. Code Style:
+```bash
+# Format code with black
+black .
+
+# Sort imports
+isort .
+
+# Run linter
+ruff check .
+
+# Run type checker
+mypy .
+```
+
+4. Pre-commit checks:
+```bash
+# Run all checks before committing
+black . && isort . && ruff check . && mypy . && pytest
 ```
 
 ## Contributing
