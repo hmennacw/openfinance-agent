@@ -28,6 +28,11 @@ class OpenAIProvider(LLMProvider):
         
     async def initialize(self) -> None:
         """Initialize the OpenAI client."""
+        if not self.api_key:
+            self.api_key = os.getenv("OPENAI_API_KEY")
+            if not self.api_key:
+                raise ValueError("No API key provided")
+
         self.client = AsyncOpenAI(api_key=self.api_key)
     
     async def generate_completion(
