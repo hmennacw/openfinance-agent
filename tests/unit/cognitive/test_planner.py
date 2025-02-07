@@ -161,7 +161,7 @@ class TestTaskPlanner:
     def test_create_task(self, planner):
         """Test task creation."""
         task = planner.create_task(
-            task_id="test",
+            id="test",
             name="Test Task",
             description="A test task",
             dependencies=["dep1"],
@@ -180,7 +180,7 @@ class TestTaskPlanner:
     def test_get_task(self, planner):
         """Test retrieving a task."""
         task = planner.create_task(
-            task_id="test",
+            id="test",
             name="Test Task",
             description="A test task"
         )
@@ -299,7 +299,7 @@ class TestTaskPlanner:
             executed = True
         
         task = planner.create_task(
-            task_id="test",
+            id="test",
             name="Test Task",
             description="Test task",
             metadata={"type": "test_type"}
@@ -328,7 +328,7 @@ class TestTaskPlanner:
             raise ValueError("Test error")
         
         task = planner.create_task(
-            task_id="test",
+            id="test",
             name="Test Task",
             description="Test task",
             metadata={"type": "test_type"}
@@ -361,14 +361,14 @@ class TestTaskPlanner:
         
         # Create tasks with dependencies
         task1 = planner.create_task(
-            task_id="task1",
+            id="task1",
             name="Task 1",
             description="First task",
             metadata={"type": "test_type"}
         )
         
         task2 = planner.create_task(
-            task_id="task2",
+            id="task2",
             name="Task 2",
             description="Second task",
             dependencies=["task1"],
@@ -392,14 +392,14 @@ class TestTaskPlanner:
             raise ValueError("Test error")
         
         task1 = planner.create_task(
-            task_id="task1",
+            id="task1",
             name="Task 1",
             description="First task",
             metadata={"type": "failing_type"}
         )
         
         task2 = planner.create_task(
-            task_id="task2",
+            id="task2",
             name="Task 2",
             description="Second task",
             dependencies=["task1"],
@@ -430,27 +430,27 @@ class TestTaskPlanner:
         """Test execution plan generation."""
         # Create tasks with dependencies
         task1 = planner.create_task(
-            task_id="task1",
+            id="task1",
             name="Task 1",
             description="First task"
         )
         
         task2 = planner.create_task(
-            task_id="task2",
+            id="task2",
             name="Task 2",
             description="Second task",
             dependencies=["task1"]
         )
         
         task3 = planner.create_task(
-            task_id="task3",
+            id="task3",
             name="Task 3",
             description="Third task",
             dependencies=["task1"]
         )
         
         task4 = planner.create_task(
-            task_id="task4",
+            id="task4",
             name="Task 4",
             description="Fourth task",
             dependencies=["task2", "task3"]
@@ -472,7 +472,7 @@ class TestTaskPlanner:
         
         # Create tasks with missing dependency
         task = planner.create_task(
-            task_id="task",
+            id="task",
             name="Task",
             description="Task with missing dependency",
             dependencies=["missing"],

@@ -3,11 +3,11 @@ import logging
 from pathlib import Path
 from typing import Dict, Any
 
-from cognitive.memory import MemoryManager
-from cognitive.planner import TaskPlanner, Task, TaskStatus
-from cognitive.decision import CodeGenerationDecisionMaker
-from cognitive.learning import LearningSystem
-from compiler.pipeline import (
+from src.cognitive.memory import MemoryManager
+from src.cognitive.planner import TaskPlanner, Task, TaskStatus
+from src.cognitive.decision import CodeGenerationDecisionMaker
+from src.cognitive.learning import LearningSystem
+from src.compiler.pipeline import (
     Pipeline,
     CompilationStage,
     SwaggerParser,
@@ -17,8 +17,8 @@ from compiler.pipeline import (
     CodeOptimizer,
     CodeValidator
 )
-from agent.llm.openai import OpenAIProvider
-from agent.llm.prompts import PromptManager
+from src.agent.llm.openai import OpenAIProvider
+from src.agent.llm.prompts import PromptManager
 
 async def setup_pipeline() -> Pipeline:
     """Set up the compilation pipeline."""
@@ -73,14 +73,15 @@ async def process_swagger_spec(
     
     # Create initial tasks
     task_planner.create_task(
-        task_id="parse_swagger",
+        id="parse_swagger",
         name="Parse Swagger Specification",
         description="Parse and validate the Swagger specification",
-        priority=1
+        priority=1,
+        dependencies=[]
     )
     
     task_planner.create_task(
-        task_id="analyze_endpoints",
+        id="analyze_endpoints",
         name="Analyze API Endpoints",
         description="Analyze the API endpoints and determine code structure",
         dependencies=["parse_swagger"],
@@ -88,7 +89,7 @@ async def process_swagger_spec(
     )
     
     task_planner.create_task(
-        task_id="generate_models",
+        id="generate_models",
         name="Generate Data Models",
         description="Generate Go structs for data models",
         dependencies=["analyze_endpoints"],
@@ -96,7 +97,7 @@ async def process_swagger_spec(
     )
     
     task_planner.create_task(
-        task_id="generate_handlers",
+        id="generate_handlers",
         name="Generate API Handlers",
         description="Generate Go handlers for API endpoints",
         dependencies=["generate_models"],
@@ -104,7 +105,7 @@ async def process_swagger_spec(
     )
     
     task_planner.create_task(
-        task_id="generate_routes",
+        id="generate_routes",
         name="Generate API Routes",
         description="Generate Go route configurations",
         dependencies=["generate_handlers"],

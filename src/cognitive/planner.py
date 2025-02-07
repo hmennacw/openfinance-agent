@@ -132,7 +132,7 @@ class TaskPlanner:
     
     def create_task(
         self,
-        task_id: str,
+        id: str,
         name: str,
         description: str,
         dependencies: Optional[List[str]] = None,
@@ -141,14 +141,14 @@ class TaskPlanner:
     ) -> Task:
         """Create a new task."""
         task = Task(
-            id=task_id,
+            id=id,
             name=name,
             description=description,
             dependencies=dependencies or [],
             metadata=metadata or {},
             priority=priority
         )
-        self.tasks[task_id] = task
+        self.tasks[id] = task
         return task
     
     def get_task(self, task_id: str) -> Optional[Task]:
