@@ -1,11 +1,10 @@
 # OpenFinance Agent
 
-[![Tests](https://github.com/henriquemenna/openfinance-agent/actions/workflows/test.yml/badge.svg)](https://github.com/henriquemenna/openfinance-agent/actions/workflows/test.yml)
-[![Coverage](coverage.svg)](https://henriquemenna.github.io/openfinance-agent/coverage/)
+[![Tests](https://github.com/cloudwalk/openfinance-agent/actions/workflows/test.yml/badge.svg)](https://github.com/cloudwalk/openfinance-agent/actions/workflows/test.yml)
+[![Coverage](coverage.svg)](https://cloudwalk.github.io/openfinance-agent/coverage/)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
-[![Commercial License Available](https://img.shields.io/badge/License-Commercial-green.svg)](mailto:henrique.menna@gmail.com)
 
-[View Full Coverage Report](https://henriquemenna.github.io/openfinance-agent/coverage/)
+[View Full Coverage Report](https://cloudwalk.github.io/openfinance-agent/coverage/)
 
 An intelligent agent for generating Go API code from Swagger/OpenAPI specifications. This project uses LLM Compiler and Cognitive Architecture concepts to create a modular and maintainable code generation system.
 
@@ -40,12 +39,6 @@ python -m openfinance_agent generate --input swagger.yaml --output ./generated
   - Customizable templates
   - Extensive configuration options
   - Comprehensive test coverage
-
-- **Enterprise Ready**
-  - Commercial licensing available
-  - Support and maintenance included
-  - Custom development options
-  - Training and integration assistance
 
 ## Example
 
@@ -230,28 +223,17 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 ## Support
 
-- [Documentation](https://henriquemenna.github.io/openfinance-agent/)
-- [Issue Tracker](https://github.com/henriquemenna/openfinance-agent/issues)
-- [Discussions](https://github.com/henriquemenna/openfinance-agent/discussions)
+- [Documentation](https://cloudwalk.github.io/openfinance-agent/)
+- [Issue Tracker](https://github.com/cloudwalk/openfinance-agent/issues)
+- [Discussions](https://github.com/cloudwalk/openfinance-agent/discussions)
 - Email: henrique.menna@gmail.com
 
 ## License
 
-This project is available under a dual-license model:
-
-### Open Source License (AGPL-3.0)
-For non-commercial and open source projects, this software is licensed under the [GNU Affero General Public License v3.0](https://www.gnu.org/licenses/agpl-3.0.en.html). This means you can:
-- Use the software for non-commercial purposes
-- Modify and distribute the software
+This project is licensed under the [GNU Affero General Public License v3.0](https://www.gnu.org/licenses/agpl-3.0.en.html). This means you can:
+- Use and modify the software freely
+- Distribute the software and your modifications
 - Must share any modifications under the same license
 - Must make source code available when serving over a network
 
-### Commercial License
-For commercial use, a paid license is required. The commercial license includes:
-- Full rights to use in commercial projects
-- Private modifications allowed
-- No requirement to share modifications
-- Priority support and updates
-- Custom development available
-
-Contact henrique.menna@gmail.com for commercial licensing inquiries. 
+The AGPL-3.0 license ensures that this software remains free and open source, benefiting the entire community. For more details, see the [LICENSE](LICENSE) file. 
