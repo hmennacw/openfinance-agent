@@ -33,12 +33,6 @@ jobs:
         PYTHONPATH=$PYTHONPATH:$(pwd) pytest --cov=src --cov-report=html --cov-report=term-missing
         coverage-badge -o coverage.svg -f
     
-    - name: Publish coverage report to GitHub Pages
-      uses: JamesIves/github-pages-deploy-action@v4
-      with:
-        folder: htmlcov
-        target-folder: coverage
-    
     - name: Commit and push coverage badge
       if: github.ref == 'refs/heads/main'
       run: |
