@@ -2,6 +2,8 @@
 
 ![Coverage](./coverage.svg)
 [![Tests](https://github.com/henriquemenna/openfinance-agent/actions/workflows/test.yml/badge.svg)](https://github.com/henriquemenna/openfinance-agent/actions/workflows/test.yml)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+[![Commercial License Available](https://img.shields.io/badge/License-Commercial-green.svg)](mailto:henrique.menna@gmail.com)
 
 [View Full Coverage Report](https://henriquemenna.github.io/openfinance-agent/coverage/)
 
@@ -128,6 +130,23 @@ pytest
 
 ## License
 
-[License information will be added]
+This project is available under a dual-license model:
+
+### Open Source License (AGPL-3.0)
+For non-commercial and open source projects, this software is licensed under the [GNU Affero General Public License v3.0](https://www.gnu.org/licenses/agpl-3.0.en.html). This means you can:
+- Use the software for non-commercial purposes
+- Modify and distribute the software
+- Must share any modifications under the same license
+- Must make source code available when serving over a network
+
+### Commercial License
+For commercial use, a paid license is required. The commercial license includes:
+- Full rights to use in commercial projects
+- Private modifications allowed
+- No requirement to share modifications
+- Priority support and updates
+- Custom development available
+
+Contact henrique.menna@gmail.com for commercial licensing inquiries.
 
 [![codecov](https://codecov.io/gh/henriquemenna/openfinance-agent/branch/main/graph/badge.svg)](https://codecov.io/gh/henriquemenna/openfinance-agent) 

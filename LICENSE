@@ -1,0 +1,47 @@
+                    GNU AFFERO GENERAL PUBLIC LICENSE
+                       Version 3, 19 November 2007
+
+This project is dual-licensed under the GNU Affero General Public License version 3 (AGPLv3)
+and a Commercial License.
+
+For non-commercial, open source projects, you may use this software under the terms of
+the GNU Affero General Public License as published by the Free Software Foundation,
+either version 3 of the License, or (at your option) any later version.
+
+For commercial use, you must purchase a commercial license. Contact henrique.menna@gmail.com
+for licensing inquiries.
+
+Commercial License Terms:
+- Commercial use requires a paid license
+- License fees are based on company size and usage
+- Support and maintenance are included in commercial licenses
+- Custom development and integration support available
+- Contact for pricing and details
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+Copyright (c) 2024 Henrique Menna.
+
+Additional Permissions:
+- Integration with proprietary software is allowed under commercial license
+- Private modifications and deployments allowed under commercial license
+- SaaS and cloud service deployments require commercial license
+
+Proprietary License
+
+Copyright (c) 2024 CloudWalk, Inc. All rights reserved.
+
+This software and associated documentation files (the "Software") are proprietary
+and confidential to CloudWalk, Inc. The Software is protected by copyright
+and other intellectual property laws.
+
+You may not use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software without explicit written permission from CloudWalk, Inc.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
