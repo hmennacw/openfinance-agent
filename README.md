@@ -1,5 +1,10 @@
 # OpenFinance Agent
 
+![Coverage](./coverage.svg)
+[![Tests](https://github.com/henriquemenna/openfinance-agent/actions/workflows/test.yml/badge.svg)](https://github.com/henriquemenna/openfinance-agent/actions/workflows/test.yml)
+
+[View Full Coverage Report](https://henriquemenna.github.io/openfinance-agent/coverage/)
+
 An intelligent agent for generating Go API code from Swagger/OpenAPI specifications. This project uses LLM Compiler and Cognitive Architecture concepts to create a modular and maintainable code generation system.
 
 ## Architecture
@@ -123,4 +128,6 @@ pytest
 
 ## License
 
-[License information will be added] 
+[License information will be added]
+
+[![codecov](https://codecov.io/gh/henriquemenna/openfinance-agent/branch/main/graph/badge.svg)](https://codecov.io/gh/henriquemenna/openfinance-agent) 

@@ -10,4 +10,6 @@ pyyaml>=6.0.1
 jsonschema>=4.0.0
 ruff>=0.1.9
 typing-extensions>=4.8.0
-python-jose>=3.3.0 
+python-jose>=3.3.0
+pytest-cov==4.1.0
+coverage==7.4.1 
