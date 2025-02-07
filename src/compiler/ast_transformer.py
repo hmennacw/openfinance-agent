@@ -20,99 +20,112 @@ class NodeType(Enum):
 @dataclass
 class Node:
     """Base class for AST nodes."""
-    node_type: NodeType
     name: str
     position: Optional[Dict[str, int]] = None
     comments: List[str] = field(default_factory=list)
+    node_type: NodeType = field(init=False)
 
 @dataclass
-class Package(Node):
+class Package:
     """Represents a Go package."""
+    name: str
     imports: List['Import'] = field(default_factory=list)
     declarations: List[Union['Struct', 'Interface', 'Function']] = field(default_factory=list)
-    
-    def __post_init__(self):
-        self.node_type = NodeType.PACKAGE
+    position: Optional[Dict[str, int]] = None
+    comments: List[str] = field(default_factory=list)
+    node_type: NodeType = field(default=NodeType.PACKAGE, init=False)
 
 @dataclass
-class Import(Node):
+class Import:
     """Represents a Go import statement."""
     path: str
+    name: str
     alias: Optional[str] = None
-    
-    def __post_init__(self):
-        self.node_type = NodeType.IMPORT
+    position: Optional[Dict[str, int]] = None
+    comments: List[str] = field(default_factory=list)
+    node_type: NodeType = field(default=NodeType.IMPORT, init=False)
 
 @dataclass
-class Field(Node):
+class Field:
     """Represents a struct field or interface method parameter."""
+    name: str
     type_name: str
     tags: Optional[Dict[str, str]] = None
-    
-    def __post_init__(self):
-        self.node_type = NodeType.FIELD
+    position: Optional[Dict[str, int]] = None
+    comments: List[str] = field(default_factory=list)
+    node_type: NodeType = field(default=NodeType.FIELD, init=False)
 
 @dataclass
-class Struct(Node):
+class Struct:
     """Represents a Go struct definition."""
+    name: str
     fields: List[Field] = field(default_factory=list)
     methods: List['Method'] = field(default_factory=list)
     embedded: List[str] = field(default_factory=list)
-    
-    def __post_init__(self):
-        self.node_type = NodeType.STRUCT
+    position: Optional[Dict[str, int]] = None
+    comments: List[str] = field(default_factory=list)
+    node_type: NodeType = field(default=NodeType.STRUCT, init=False)
 
 @dataclass
-class Interface(Node):
+class Interface:
     """Represents a Go interface definition."""
+    name: str
     methods: List['Method'] = field(default_factory=list)
     embedded: List[str] = field(default_factory=list)
-    
-    def __post_init__(self):
-        self.node_type = NodeType.INTERFACE
+    position: Optional[Dict[str, int]] = None
+    comments: List[str] = field(default_factory=list)
+    node_type: NodeType = field(default=NodeType.INTERFACE, init=False)
 
 @dataclass
-class Parameter(Node):
+class Parameter:
     """Represents a function parameter."""
+    name: str
     type_name: str
     variadic: bool = False
-    
-    def __post_init__(self):
-        self.node_type = NodeType.PARAMETER
+    position: Optional[Dict[str, int]] = None
+    comments: List[str] = field(default_factory=list)
+    node_type: NodeType = field(default=NodeType.PARAMETER, init=False)
 
 @dataclass
-class Function(Node):
+class Function:
     """Represents a Go function definition."""
+    name: str
     parameters: List[Parameter] = field(default_factory=list)
     results: List[Parameter] = field(default_factory=list)
     body: List['Statement'] = field(default_factory=list)
-    
-    def __post_init__(self):
-        self.node_type = NodeType.FUNCTION
+    position: Optional[Dict[str, int]] = None
+    comments: List[str] = field(default_factory=list)
+    node_type: NodeType = field(default=NodeType.FUNCTION, init=False)
 
 @dataclass
-class Method(Function):
+class Method:
     """Represents a Go method definition."""
+    name: str
     receiver: Parameter
-    
-    def __post_init__(self):
-        self.node_type = NodeType.METHOD
+    parameters: List[Parameter] = field(default_factory=list)
+    results: List[Parameter] = field(default_factory=list)
+    body: List['Statement'] = field(default_factory=list)
+    position: Optional[Dict[str, int]] = None
+    comments: List[str] = field(default_factory=list)
+    node_type: NodeType = field(default=NodeType.METHOD, init=False)
 
 @dataclass
-class Statement(Node):
+class Statement:
     """Represents a Go statement."""
+    name: str
     code: str
-    
-    def __post_init__(self):
-        self.node_type = NodeType.STATEMENT
+    position: Optional[Dict[str, int]] = None
+    comments: List[str] = field(default_factory=list)
+    node_type: NodeType = field(default=NodeType.STATEMENT, init=False)
 
 @dataclass
-class Expression(Node):
+class Expression:
     """Represents a Go expression."""
+    name: str
     code: str
-    
-    def __post_init__(self):
-        self.node_type = NodeType.EXPRESSION
+    position: Optional[Dict[str, int]] = None
+    comments: List[str] = field(default_factory=list)
+    node_type: NodeType = field(default=NodeType.EXPRESSION, init=False)
 
 class ASTTransformer:
     """Transforms Go code AST."""
@@ -133,12 +146,19 @@ class ASTTransformer:
     ) -> Package:
         """Apply transformations to the AST."""
         for transformation in transformations:
+            if "action" not in transformation:
+                self.logger.error(
+                    "Error applying transformation: Transformation must specify an action"
+                )
+                continue
+            
             try:
                 ast = self._apply_transformation(ast, transformation)
             except Exception as e:
                 self.logger.error(
                     f"Error applying transformation: {str(e)}"
                 )
+                continue
         return ast
     
     def generate(self, ast: Package) -> str:
@@ -289,32 +309,51 @@ class ASTTransformer:
         ast: Package,
         transformation: Dict[str, Any]
     ) -> Package:
-        """Modify an existing struct in the package."""
-        struct_name = transformation["target"]
-        for i, decl in enumerate(ast.declarations):
-            if isinstance(decl, Struct) and decl.name == struct_name:
-                struct = cast(Struct, decl)
-                
-                # Add new fields
-                for field in transformation.get("add_fields", []):
-                    struct.fields.append(
-                        Field(
-                            name=field["name"],
-                            type_name=field["type"],
-                            tags=field.get("tags")
-                        )
-                    )
-                
+        """Modify a struct in the package."""
+        target = transformation.get("name")
+        if not target:
+            raise ValueError("Struct modification must specify a target struct")
+
+        for decl in ast.declarations:
+            if isinstance(decl, Struct) and decl.name == target:
                 # Remove fields
-                for field_name in transformation.get("remove_fields", []):
-                    struct.fields = [
-                        f for f in struct.fields
-                        if f.name != field_name
-                    ]
-                
-                ast.declarations[i] = struct
+                remove_fields = transformation.get("remove_fields", [])
+                decl.fields = [f for f in decl.fields if f.name not in remove_fields]
+
+                # Add fields
+                add_fields = transformation.get("add_fields", [])
+                for field_data in add_fields:
+                    field = Field(
+                        name=field_data["name"],
+                        type_name=field_data["type"],
+                        tags=field_data.get("tags")
+                    )
+                    decl.fields.append(field)
+
+                # Add methods
+                add_methods = transformation.get("add_methods", [])
+                for method_data in add_methods:
+                    method = Method(
+                        name=method_data["name"],
+                        receiver=Parameter(name="r", type_name=target),
+                        parameters=[
+                            Parameter(
+                                name=p.get("name", ""),
+                                type_name=p["type"],
+                                variadic=p.get("variadic", False)
+                            )
+                            for p in method_data.get("parameters", [])
+                        ],
+                        results=[
+                            Parameter(
+                                name=r.get("name", ""),
+                                type_name=r["type"]
+                            )
+                            for r in method_data.get("results", [])
+                        ]
+                    )
+                    decl.methods.append(method)
                 break
-        
         return ast
     
     def _modify_interface(
@@ -322,79 +361,68 @@ class ASTTransformer:
         ast: Package,
         transformation: Dict[str, Any]
     ) -> Package:
-        """Modify an existing interface in the package."""
-        interface_name = transformation["target"]
-        for i, decl in enumerate(ast.declarations):
-            if isinstance(decl, Interface) and decl.name == interface_name:
-                interface = cast(Interface, decl)
-                
-                # Add new methods
-                for method in transformation.get("add_methods", []):
-                    interface.methods.append(
-                        Method(
-                            name=method["name"],
-                            receiver=Parameter(
-                                name="",
-                                type_name=""
-                            ),
-                            parameters=[
-                                Parameter(
-                                    name=p["name"],
-                                    type_name=p["type"],
-                                    variadic=p.get("variadic", False)
-                                )
-                                for p in method.get("parameters", [])
-                            ],
-                            results=[
-                                Parameter(
-                                    name=r.get("name", ""),
-                                    type_name=r["type"]
-                                )
-                                for r in method.get("results", [])
-                            ]
-                        )
-                    )
-                
+        """Modify an interface in the package."""
+        target = transformation.get("name")
+        if not target:
+            raise ValueError("Interface modification must specify a target interface")
+
+        for decl in ast.declarations:
+            if isinstance(decl, Interface) and decl.name == target:
                 # Remove methods
-                for method_name in transformation.get("remove_methods", []):
-                    interface.methods = [
-                        m for m in interface.methods
-                        if m.name != method_name
-                    ]
-                
-                ast.declarations[i] = interface
+                remove_methods = transformation.get("remove_methods", [])
+                decl.methods = [m for m in decl.methods if m.name not in remove_methods]
+
+                # Add methods
+                add_methods = transformation.get("add_methods", [])
+                for method_data in add_methods:
+                    method = Method(
+                        name=method_data["name"],
+                        receiver=Parameter(name="r", type_name=target),
+                        parameters=[
+                            Parameter(
+                                name=p.get("name", ""),
+                                type_name=p["type"],
+                                variadic=p.get("variadic", False)
+                            )
+                            for p in method_data.get("parameters", [])
+                        ],
+                        results=[
+                            Parameter(
+                                name=r.get("name", ""),
+                                type_name=r["type"]
+                            )
+                            for r in method_data.get("results", [])
+                        ]
+                    )
+                    decl.methods.append(method)
                 break
-        
         return ast
     
     def _generate_package(self, package: Package) -> str:
         """Generate Go code for a package."""
-        lines = [
-            f"package {package.name}\n",
-            self._generate_imports(package.imports),
-            "\n".join(
-                self._generate_declaration(decl)
-                for decl in package.declarations
-            )
-        ]
-        return "\n\n".join(filter(None, lines))
-    
-    def _generate_imports(self, imports: List[Import]) -> str:
-        """Generate Go code for imports."""
-        if not imports:
-            return ""
+        parts = [f"package {package.name}\n\n"]
         
-        if len(imports) == 1:
-            imp = imports[0]
-            return f'import {imp.alias + " " if imp.alias else ""}{imp.path}'
+        if package.imports:
+            if len(package.imports) == 1:
+                imp = package.imports[0]
+                if imp.alias:
+                    parts.append(f'import {imp.alias} "{imp.path}"\n\n')
+                else:
+                    parts.append(f'import "{imp.path}"\n\n')
+            else:
+                parts.append("import (\n")
+                for imp in package.imports:
+                    if imp.alias:
+                        parts.append(f'\t{imp.alias} "{imp.path}"\n')
+                    else:
+                        parts.append(f'\t"{imp.path}"\n')
+                parts.append(")\n\n")
         
-        lines = ["import ("]
-        for imp in imports:
-            lines.append(
-                f'\t{imp.alias + " " if imp.alias else ""}{imp.path}'
-            )
-        lines.append(")")
-        return "\n".join(lines)
+        for decl in package.declarations:
+            parts.append(self._generate_declaration(decl))
+            parts.append("\n")
+        
+        return "".join(parts)
     
     def _generate_declaration(
         self,
@@ -411,89 +439,111 @@ class ASTTransformer:
     
     def _generate_struct(self, struct: Struct) -> str:
         """Generate Go code for a struct."""
-        lines = [f"type {struct.name} struct {{"]
+        parts = [f"type {struct.name} struct {{\n"]
         
-        # Add embedded types
-        for embedded in struct.embedded:
-            lines.append(f"\t{embedded}")
+        # Generate fields
+        max_name_len = max((len(f.name) for f in struct.fields), default=0)
+        max_type_len = max((len(f.type_name) for f in struct.fields), default=0)
         
-        # Add fields
         for field in struct.fields:
-            tag_str = ""
+            field_str = f"\t{field.name}"
+            # Add padding for alignment (name)
+            field_str += " " * (max_name_len - len(field.name) + 3)
+            field_str += field.type_name
+            # Add padding for alignment (type)
             if field.tags:
-                tags = " ".join(
-                    f'{key}:"{value}"'
-                    for key, value in field.tags.items()
-                )
-                tag_str = f" `{tags}`"
-            lines.append(f"\t{field.name} {field.type_name}{tag_str}")
+                field_str += " " * (max_type_len - len(field.type_name) + 4)
+                tags_str = " ".join(f'{k}:"{v}"' for k, v in field.tags.items())
+                field_str += f"`{tags_str}`"
+            parts.append(field_str + "\n")
         
-        lines.append("}")
+        parts.append("}\n\n")
         
-        # Add methods
-        if struct.methods:
-            lines.append("")
-            for method in struct.methods:
-                lines.append(self._generate_method(method, struct.name))
+        # Generate methods
+        for method in struct.methods:
+            parts.append(self._generate_method(method, struct.name))
+            parts.append("\n\n")
         
-        return "\n".join(lines)
+        return "".join(parts)
     
     def _generate_interface(self, interface: Interface) -> str:
         """Generate Go code for an interface."""
-        lines = [f"type {interface.name} interface {{"]
+        parts = [f"type {interface.name} interface {{\n"]
         
-        # Add embedded interfaces
+        # Generate embedded interfaces
         for embedded in interface.embedded:
-            lines.append(f"\t{embedded}")
+            parts.append(f"\t{embedded}\n")
         
-        # Add methods
+        # Generate methods
         for method in interface.methods:
             params = self._generate_parameters(method.parameters)
             results = self._generate_results(method.results)
-            lines.append(f"\t{method.name}({params}) {results}")
+            if results:
+                parts.append(f"\t{method.name}({params}) {results}\n")
+            else:
+                parts.append(f"\t{method.name}({params})\n")
         
-        lines.append("}")
-        return "\n".join(lines)
+        parts.append("}\n")
+        return "".join(parts)
     
     def _generate_function(self, func: Function) -> str:
         """Generate Go code for a function."""
         params = self._generate_parameters(func.parameters)
         results = self._generate_results(func.results)
         
-        lines = [f"func {func.name}({params}) {results} {{"]
+        parts = [f"func {func.name}({params})"]
+        if results:
+            parts.append(f" {results}")
+        parts.append(" {\n")
+        
         for stmt in func.body:
-            lines.append(f"\t{stmt.code}")
-        lines.append("}")
-        return "\n".join(lines)
+            parts.append(f"\t{stmt.code}\n")
+        
+        parts.append("}")
+        return "".join(parts)
     
     def _generate_method(self, method: Method, receiver_type: str) -> str:
         """Generate Go code for a method."""
+        receiver = f"({method.receiver.name} {method.receiver.type_name})"
         params = self._generate_parameters(method.parameters)
         results = self._generate_results(method.results)
         
-        lines = [
-            f"func (r {receiver_type}) {method.name}({params}) {results} {{"
-        ]
+        parts = [f"func {receiver} {method.name}({params})"]
+        if results:
+            parts.append(f" {results}")
+        parts.append(" {\n")
+        
         for stmt in method.body:
-            lines.append(f"\t{stmt.code}")
-        lines.append("}")
-        return "\n".join(lines)
+            parts.append(f"\t{stmt.code}\n")
+        
+        parts.append("}")
+        return "".join(parts)
     
     def _generate_parameters(self, params: List[Parameter]) -> str:
-        """Generate Go code for function parameters."""
-        return ", ".join(
-            f"{p.name} {'...' if p.variadic else ''}{p.type_name}"
-            for p in params
-        )
+        """Generate Go code for parameters."""
+        param_strs = []
+        for param in params:
+            param_str = param.name
+            if param.variadic:
+                param_str += f" ...{param.type_name}"
+            else:
+                param_str += f" {param.type_name}"
+            param_strs.append(param_str)
+        return ", ".join(param_strs)
     
     def _generate_results(self, results: List[Parameter]) -> str:
-        """Generate Go code for function results."""
+        """Generate Go code for results."""
         if not results:
             return ""
-        elif len(results) == 1 and not results[0].name:
+        
+        if len(results) == 1 and not results[0].name:
             return results[0].type_name
         
-        return "(" + ", ".join(
-            f"{r.name} {r.type_name}" if r.name else r.type_name
-            for r in results
-        ) + ")" 
+        result_strs = []
+        for result in results:
+            if result.name:
+                result_strs.append(f"{result.name} {result.type_name}")
+            else:
+                result_strs.append(result.type_name)
+        
+        return f"({', '.join(result_strs)})" 
