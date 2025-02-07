@@ -33,19 +33,19 @@ def test_task_status_update():
     )
     
     # Test starting the task
-    task.update_status(TaskStatus.IN_PROGRESS)
+    task = task.update_status(TaskStatus.IN_PROGRESS)
     assert task.status == TaskStatus.IN_PROGRESS
     assert task.started_at is not None
     assert task.completed_at is None
     
     # Test completing the task
-    task.update_status(TaskStatus.COMPLETED)
+    task = task.update_status(TaskStatus.COMPLETED)
     assert task.status == TaskStatus.COMPLETED
     assert task.completed_at is not None
     
     # Test failing the task
     error_msg = "Test error"
-    task.update_status(TaskStatus.FAILED, error_msg)
+    task = task.update_status(TaskStatus.FAILED, error_msg)
     assert task.status == TaskStatus.FAILED
     assert task.error == error_msg
 
@@ -65,9 +65,17 @@ def test_task_subtasks():
         dependencies=[]
     )
     
-    parent.add_subtask(child)
-    assert child in parent.subtasks
-    assert child.parent_id == parent.id
+    # Since Task is immutable, add_subtask returns a new task instance
+    updated_parent = parent.add_subtask(child)
+    
+    # Verify the original parent is unchanged
+    assert len(parent.subtasks) == 0
+    assert parent.id == updated_parent.id
+    
+    # Verify the updated parent has the child task
+    assert len(updated_parent.subtasks) == 1
+    assert updated_parent.subtasks[0].id == child.id
+    assert updated_parent.subtasks[0].parent_id == parent.id
 
 class TestTaskPlanner:
     """Test suite for TaskPlanner."""
@@ -99,7 +107,10 @@ class TestTaskPlanner:
             name="Task 2",
             description="Task 2"
         )
-        task2.update_status(TaskStatus.IN_PROGRESS)
+        
+        # Update task2 status and store the new instance
+        updated_task2 = task2.update_status(TaskStatus.IN_PROGRESS)
+        planner.tasks[updated_task2.id] = updated_task2
         
         pending = planner.get_pending_tasks()
         assert len(pending) == 1
@@ -107,12 +118,13 @@ class TestTaskPlanner:
     
     def test_get_blocked_tasks(self, planner):
         """Test retrieving blocked tasks."""
+        # Create a task with a non-existent dependency to make it blocked
         task = planner.create_task(
             task_id="task",
             name="Task",
-            description="Task"
+            description="Task",
+            dependencies=["nonexistent"]
         )
-        task.update_status(TaskStatus.BLOCKED)
         
         blocked = planner.get_blocked_tasks()
         assert len(blocked) == 1
@@ -135,7 +147,10 @@ class TestTaskPlanner:
         # Task2 should not be executable until task1 is completed
         assert not planner._can_execute_task(task2)
         
-        task1.update_status(TaskStatus.COMPLETED)
+        # Update task1 status and store the new instance
+        updated_task1 = task1.update_status(TaskStatus.COMPLETED)
+        planner.tasks[updated_task1.id] = updated_task1
+        
         assert planner._can_execute_task(task2)
     
     def test_get_next_task(self, planner):
@@ -182,7 +197,10 @@ class TestTaskPlanner:
         
         await planner.execute_task(task, context)
         assert executed
-        assert task.status == TaskStatus.COMPLETED
+        
+        # Get the updated task from the planner
+        updated_task = planner.get_task("test")
+        assert updated_task.status == TaskStatus.COMPLETED
     
     @pytest.mark.asyncio
     async def test_execute_all_tasks(self, planner):
@@ -282,5 +300,9 @@ class TestTaskPlanner:
         with pytest.raises(Exception):
             await planner.execute_all_tasks(None)
         
-        assert task1.status == TaskStatus.FAILED
-        assert task2.status == TaskStatus.BLOCKED 
+        # Get the updated tasks from the planner
+        updated_task1 = planner.get_task("task1")
+        updated_task2 = planner.get_task("task2")
+        
+        assert updated_task1.status == TaskStatus.FAILED
+        assert updated_task2.status == TaskStatus.BLOCKED 

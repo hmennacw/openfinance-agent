@@ -38,9 +38,12 @@ class Task:
             return NotImplemented
         return self.id == other.id
     
-    def add_subtask(self, subtask: 'Task') -> None:
-        """Add a subtask to this task."""
-        # Create a new task with the updated parent_id
+    def add_subtask(self, subtask: 'Task') -> 'Task':
+        """Add a subtask to this task.
+        
+        Since Task is immutable, this returns a new Task instance with the updated subtasks.
+        """
+        # Create a new subtask with the updated parent_id
         new_subtask = Task(
             id=subtask.id,
             name=subtask.name,
@@ -56,18 +59,45 @@ class Task:
             parent_id=self.id,
             priority=subtask.priority
         )
-        # Since the object is frozen, we need to use object.__setattr__ to modify the list
-        object.__setattr__(self, 'subtasks', self.subtasks + [new_subtask])
+        
+        # Create a new task instance with the updated subtasks list
+        return Task(
+            id=self.id,
+            name=self.name,
+            description=self.description,
+            dependencies=self.dependencies,
+            status=self.status,
+            created_at=self.created_at,
+            started_at=self.started_at,
+            completed_at=self.completed_at,
+            error=self.error,
+            metadata=self.metadata,
+            subtasks=self.subtasks + [new_subtask],
+            parent_id=self.parent_id,
+            priority=self.priority
+        )
     
-    def update_status(self, status: TaskStatus, error: Optional[str] = None) -> None:
-        """Update the task's status."""
-        object.__setattr__(self, 'status', status)
-        if status == TaskStatus.IN_PROGRESS and not self.started_at:
-            object.__setattr__(self, 'started_at', datetime.now())
-        elif status in [TaskStatus.COMPLETED, TaskStatus.FAILED]:
-            object.__setattr__(self, 'completed_at', datetime.now())
-        if error:
-            object.__setattr__(self, 'error', error)
+    def update_status(self, status: TaskStatus, error: Optional[str] = None) -> 'Task':
+        """Update the task's status.
+        
+        Since Task is immutable, this returns a new Task instance with the updated status.
+        """
+        now = datetime.now()
+        return Task(
+            id=self.id,
+            name=self.name,
+            description=self.description,
+            dependencies=self.dependencies,
+            status=status,
+            created_at=self.created_at,
+            started_at=now if status == TaskStatus.IN_PROGRESS and not self.started_at else self.started_at,
+            completed_at=now if status in [TaskStatus.COMPLETED, TaskStatus.FAILED] else self.completed_at,
+            error=error if error else self.error,
+            metadata=self.metadata,
+            subtasks=self.subtasks,
+            parent_id=self.parent_id,
+            priority=self.priority
+        )
 
 @dataclass
 class TaskExecutionContext:
@@ -122,7 +152,7 @@ class TaskPlanner:
         return task
     
     def get_task(self, task_id: str) -> Optional[Task]:
-        """Get a task by its ID."""
+        """Get a task by ID."""
         return self.tasks.get(task_id)
     
     def get_all_tasks(self) -> List[Task]:
@@ -140,17 +170,22 @@ class TaskPlanner:
         """Get all blocked tasks."""
         return [
             task for task in self.tasks.values()
-            if task.status == TaskStatus.BLOCKED
+            if any(
+                dep_id not in self.tasks or 
+                self.tasks[dep_id].status != TaskStatus.COMPLETED
+                for dep_id in task.dependencies
+            )
         ]
     
     def _can_execute_task(self, task: Task) -> bool:
         """Check if a task can be executed."""
+        # Task must be pending
         if task.status != TaskStatus.PENDING:
             return False
         
-        # Check if all dependencies are completed
+        # All dependencies must be completed
         for dep_id in task.dependencies:
-            dep_task = self.get_task(dep_id)
+            dep_task = self.tasks.get(dep_id)
             if not dep_task or dep_task.status != TaskStatus.COMPLETED:
                 return False
         
@@ -166,7 +201,7 @@ class TaskPlanner:
         if not executable_tasks:
             return None
         
-        # Return the highest priority task
+        # Return highest priority task
         return max(executable_tasks, key=lambda t: t.priority)
     
     async def execute_task(
@@ -174,24 +209,25 @@ class TaskPlanner:
         task: Task,
         context: TaskExecutionContext
     ) -> None:
-        """Execute a single task."""
+        """Execute a task with the given context."""
         try:
-            task.update_status(TaskStatus.IN_PROGRESS)
+            # Update task status to in progress
+            task = task.update_status(TaskStatus.IN_PROGRESS)
+            self.tasks[task.id] = task
             
-            # Get the appropriate handler for the task
-            handler = self.handlers.get(task.metadata.get("type"))
-            if not handler:
-                raise ValueError(f"No handler found for task type: {task.metadata.get('type')}")
+            # Execute task handler if available
+            task_type = task.metadata.get("type")
+            if task_type and task_type in self.handlers:
+                await self.handlers[task_type](context)
             
-            # Execute the task
-            await handler(context)
-            
-            # Update task status
-            task.update_status(TaskStatus.COMPLETED)
+            # Update task status to completed
+            task = task.update_status(TaskStatus.COMPLETED)
+            self.tasks[task.id] = task
             
         except Exception as e:
-            self.logger.error(f"Error executing task {task.id}: {str(e)}")
-            task.update_status(TaskStatus.FAILED, str(e))
+            self.logger.error(f"Task {task.id} failed: {str(e)}")
+            task = task.update_status(TaskStatus.FAILED, str(e))
+            self.tasks[task.id] = task
             raise
     
     async def execute_all_tasks(
@@ -205,7 +241,7 @@ class TaskPlanner:
                 # Check if there are any tasks that aren't completed or failed
                 incomplete_tasks = [
                     task for task in self.tasks.values()
-                    if task.status not in [TaskStatus.COMPLETED, TaskStatus.FAILED]
+                    if task.status not in [TaskStatus.COMPLETED, TaskStatus.FAILED, TaskStatus.BLOCKED]
                 ]
                 if not incomplete_tasks:
                     break
@@ -213,9 +249,12 @@ class TaskPlanner:
                 blocked_tasks = self.get_blocked_tasks()
                 if blocked_tasks:
                     self.logger.warning(f"Found {len(blocked_tasks)} blocked tasks")
-                    # Here you could implement retry logic or other handling
-                await asyncio.sleep(1)  # Prevent tight loop
-                continue
+                    # Mark all blocked tasks as blocked
+                    for task in blocked_tasks:
+                        if task.status != TaskStatus.BLOCKED:
+                            updated_task = task.update_status(TaskStatus.BLOCKED)
+                            self.tasks[task.id] = updated_task
+                break  # Exit the loop since we can't make progress
             
             context = TaskExecutionContext(
                 task=next_task,
@@ -229,7 +268,9 @@ class TaskPlanner:
                 # Mark dependent tasks as blocked
                 for task in self.tasks.values():
                     if next_task.id in task.dependencies:
-                        task.update_status(TaskStatus.BLOCKED)
+                        updated_task = task.update_status(TaskStatus.BLOCKED)
+                        self.tasks[task.id] = updated_task
+                raise  # Re-raise the exception
     
     def reset(self) -> None:
         """Reset the planner state."""
