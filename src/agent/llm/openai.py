@@ -2,8 +2,6 @@ from typing import Any, Dict, List, Optional
 import os
 
 from openai import AsyncOpenAI
-from openai.types.beta.threads import Thread
-from openai.types.beta.assistant import Assistant
 
 from .base import LLMProvider
 
@@ -61,7 +59,7 @@ class OpenAIProvider(LLMProvider):
         if not self.client:
             await self.initialize()
             
-        thread: Thread = await self.client.beta.threads.create()
+        thread = await self.client.beta.threads.create()
         return thread.id
     
     async def add_message_to_thread(
