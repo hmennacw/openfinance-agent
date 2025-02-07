@@ -1,13 +1,98 @@
 # OpenFinance Agent
 
-![Coverage](./coverage.svg)
 [![Tests](https://github.com/henriquemenna/openfinance-agent/actions/workflows/test.yml/badge.svg)](https://github.com/henriquemenna/openfinance-agent/actions/workflows/test.yml)
+[![Coverage](coverage.svg)](https://henriquemenna.github.io/openfinance-agent/coverage/)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Commercial License Available](https://img.shields.io/badge/License-Commercial-green.svg)](mailto:henrique.menna@gmail.com)
 
 [View Full Coverage Report](https://henriquemenna.github.io/openfinance-agent/coverage/)
 
 An intelligent agent for generating Go API code from Swagger/OpenAPI specifications. This project uses LLM Compiler and Cognitive Architecture concepts to create a modular and maintainable code generation system.
+
+## Quick Start
+
+```bash
+# Install the package
+pip install openfinance-agent
+
+# Set your OpenAI API key
+export OPENAI_API_KEY=your_api_key_here
+
+# Generate code from a Swagger spec
+python -m openfinance_agent generate --input swagger.yaml --output ./generated
+```
+
+## Key Features
+
+- **Intelligent Code Generation**
+  - Generates idiomatic Go code from OpenAPI/Swagger specs
+  - Uses LLM to understand and implement business logic
+  - Follows Go best practices and patterns
+
+- **Cognitive Architecture**
+  - Memory Management for context retention
+  - Task Planning for complex generations
+  - Decision Making for architectural choices
+  - Learning System for continuous improvement
+
+- **Developer Experience**
+  - Clean, documented code output
+  - Customizable templates
+  - Extensive configuration options
+  - Comprehensive test coverage
+
+- **Enterprise Ready**
+  - Commercial licensing available
+  - Support and maintenance included
+  - Custom development options
+  - Training and integration assistance
+
+## Example
+
+```yaml
+# example-api.yaml
+openapi: 3.0.0
+info:
+  title: User Service
+  version: 1.0.0
+paths:
+  /users:
+    post:
+      summary: Create user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+      responses:
+        '201':
+          description: User created
+```
+
+Generate the code:
+```bash
+openfinance-agent generate -i example-api.yaml -o ./service
+```
+
+Generated structure:
+```
+service/
+├── api/
+│   ├── handlers/
+│   │   └── user_handler.go
+│   └── routes.go
+├── internal/
+│   ├── models/
+│   │   └── user.go
+│   └── service/
+│       └── user_service.go
+└── main.go
+```
 
 ## Architecture
 
@@ -126,7 +211,29 @@ pytest
 
 ## Contributing
 
-[Contribution guidelines will be added]
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details on:
+
+- Code of Conduct
+- Development process
+- How to submit pull requests
+- Coding standards
+- Testing requirements
+
+## Roadmap
+
+- [ ] Support for additional languages (Python, TypeScript)
+- [ ] Integration with more LLM providers
+- [ ] Enhanced test generation
+- [ ] Database schema generation
+- [ ] API documentation generation
+- [ ] CI/CD pipeline templates
+
+## Support
+
+- [Documentation](https://henriquemenna.github.io/openfinance-agent/)
+- [Issue Tracker](https://github.com/henriquemenna/openfinance-agent/issues)
+- [Discussions](https://github.com/henriquemenna/openfinance-agent/discussions)
+- Email: henrique.menna@gmail.com
 
 ## License
 
@@ -147,6 +254,4 @@ For commercial use, a paid license is required. The commercial license includes:
 - Priority support and updates
 - Custom development available
 
-Contact henrique.menna@gmail.com for commercial licensing inquiries.
-
-[![codecov](https://codecov.io/gh/henriquemenna/openfinance-agent/branch/main/graph/badge.svg)](https://codecov.io/gh/henriquemenna/openfinance-agent) 
+Contact henrique.menna@gmail.com for commercial licensing inquiries. 

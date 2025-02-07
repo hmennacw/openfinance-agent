@@ -26,21 +26,18 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install -e .  # Install package in development mode
+        pip install coverage-badge  # Install coverage-badge
     
     - name: Run tests with coverage
       run: |
         PYTHONPATH=$PYTHONPATH:$(pwd) pytest --cov=src --cov-report=html --cov-report=term-missing
-    
-    - name: Generate Coverage Badge
-      uses: tj-actions/coverage-badge-py@v2
-      with:
-        output: coverage.svg
+        coverage-badge -o coverage.svg -f
     
     - name: Publish coverage report to GitHub Pages
       uses: JamesIves/github-pages-deploy-action@v4
       with:
-        folder: htmlcov # folder containing coverage report
-        target-folder: coverage # folder in gh-pages branch
+        folder: htmlcov
+        target-folder: coverage
     
     - name: Commit and push coverage badge
       if: github.ref == 'refs/heads/main'
