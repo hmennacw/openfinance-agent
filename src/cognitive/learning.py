@@ -182,31 +182,35 @@ class LearningSystem:
         """Try to learn new rules from an example."""
         # This is where you would implement more sophisticated
         # learning algorithms. For now, we'll just log the example.
-        self.logger.info(f"Learning from example {example.id}")
+        if self.logger.isEnabledFor(logging.INFO):
+            self.logger.info("Learning from example %s", example.id)
     
     def save_examples(self) -> None:
         """Save learning examples to storage."""
         if not self.storage_path:
             return
         
-        path = Path(self.storage_path)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        
-        serialized_examples = [
-            {
-                "id": ex.id,
-                "context": ex.context,
-                "decision": ex.decision,
-                "outcome": ex.outcome,
-                "feedback": ex.feedback,
-                "timestamp": ex.timestamp.isoformat(),
-                "tags": ex.tags
-            }
-            for ex in self.examples
-        ]
-        
-        with open(path, "w") as f:
-            json.dump(serialized_examples, f, indent=2)
+        try:
+            path = Path(self.storage_path)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            
+            serialized_examples = [
+                {
+                    "id": ex.id,
+                    "context": ex.context,
+                    "decision": ex.decision,
+                    "outcome": ex.outcome,
+                    "feedback": ex.feedback,
+                    "timestamp": ex.timestamp.isoformat(),
+                    "tags": ex.tags
+                }
+                for ex in self.examples
+            ]
+            
+            with open(path, "w") as f:
+                json.dump(serialized_examples, f, indent=2)
+        except Exception as e:
+            self.logger.error(f"Error saving examples: {str(e)}")
     
     def load_examples(self) -> None:
         """Load learning examples from storage."""
