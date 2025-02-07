@@ -212,43 +212,47 @@ class MemoryManager:
     
     def load_from_file(self, file_path: str) -> None:
         """Load memories from a file."""
-        with open(file_path, "r") as f:
-            data = json.load(f)
-        
-        self.memories.clear()
-        for mtype, memories in data.items():
-            for mem_data in memories:
-                # Try to parse content as JSON if it looks like a dict/list
-                content = mem_data["content"]
-                if isinstance(content, str):
-                    if content.startswith(("{", "[")):
-                        try:
-                            content = json.loads(content)
-                        except json.JSONDecodeError:
-                            pass  # Keep as string if not valid JSON
-                
-                created_at = datetime.fromisoformat(mem_data["created_at"])
-                metadata = mem_data.get("metadata", {})
-                
-                if mtype == "code":
-                    memory = CodeMemory(
-                        content=content,
-                        file_path=mem_data["file_path"],
-                        code_type=mem_data["code_type"],
-                        dependencies=mem_data.get("dependencies", [])
-                    )
-                elif mtype == "context":
-                    memory = ContextMemory(
-                        content=content,
-                        context_type=mem_data["context_type"],
-                        scope=mem_data["scope"]
-                    )
-                else:
-                    memory = Memory(
-                        content=content,
-                        memory_type=mtype,
-                        created_at=created_at,
-                        metadata=metadata
-                    )
-                
-                self.add_memory(memory) 
+        try:
+            with open(file_path, "r") as f:
+                data = json.load(f)
+            
+            self.memories.clear()
+            for mtype, memories in data.items():
+                for mem_data in memories:
+                    # Try to parse content as JSON if it looks like a dict/list
+                    content = mem_data["content"]
+                    if isinstance(content, str):
+                        if content.startswith(("{", "[")):
+                            try:
+                                content = json.loads(content)
+                            except json.JSONDecodeError:
+                                pass  # Keep as string if not valid JSON
+                    
+                    created_at = datetime.fromisoformat(mem_data["created_at"])
+                    metadata = mem_data.get("metadata", {})
+                    
+                    if mtype == "code":
+                        memory = CodeMemory(
+                            content=content,
+                            file_path=mem_data["file_path"],
+                            code_type=mem_data["code_type"],
+                            dependencies=mem_data.get("dependencies", [])
+                        )
+                    elif mtype == "context":
+                        memory = ContextMemory(
+                            content=content,
+                            context_type=mem_data["context_type"],
+                            scope=mem_data["scope"]
+                        )
+                    else:
+                        memory = Memory(
+                            content=content,
+                            memory_type=mtype,
+                            created_at=created_at,
+                            metadata=metadata
+                        )
+                    
+                    self.add_memory(memory)
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            # Handle file not found or invalid JSON gracefully
+            pass 
