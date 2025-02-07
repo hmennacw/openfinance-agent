@@ -64,13 +64,13 @@ class TestMemoryManager:
     
     def test_get_recent_memories(self, manager):
         """Test retrieving recent memories."""
-        for i in range(15):
+        for i in range(1, 16):  # Create memories with IDs 1-15
             manager.add_memory(Memory(content=f"test_{i}"))
         
         recent = manager.get_recent_memories(limit=10)
         assert len(recent) == 10
         # Most recent should be last added
-        assert recent[0].content == "test_14"
+        assert recent[0].content == "test_15"
     
     def test_add_code_memory(self, manager, sample_code_memory):
         """Test adding a code memory."""
