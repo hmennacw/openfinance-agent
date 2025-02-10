@@ -1,6 +1,6 @@
 # OpenFinance Agent
 
-[![Tests](https://github.com/hmennacw/openfinance-agent/actions/workflows/test.yml/badge.svg)](https://github.com/hmennacw/openfinance-agent/actions/workflows/test.yml)
+[![Tests](https://github.com/cloudwalk/openfinance-agent/actions/workflows/test.yml/badge.svg)](https://github.com/cloudwalk/openfinance-agent/actions/workflows/test.yml)
 [![Coverage](./coverage.svg)](./)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
@@ -170,7 +170,7 @@ openfinance-agent/
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/hmennacw/openfinance-agent.git
+git clone https://github.com/cloudwalk/openfinance-agent.git
 cd openfinance-agent
 ```
 
@@ -255,8 +255,8 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 ## Support
 
-- [Issue Tracker](https://github.com/hmennacw/openfinance-agent/issues)
-- [Discussions](https://github.com/hmennacw/openfinance-agent/discussions)
+- [Issue Tracker](https://github.com/cloudwalk/openfinance-agent/issues)
+- [Discussions](https://github.com/cloudwalk/openfinance-agent/discussions)
 - Email: henrique.menna@gmail.com
 
 ## License
